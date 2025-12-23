@@ -186,14 +186,9 @@ Resources:
 
             # Wait for MicroK8s to be ready
             # - sudo microk8s status --wait-ready
-            - sudo cp /var/snap/microk8s/current/certs/csr.conf.template /home/ubuntu/csr.conf.template.org
-            # - sudo sed '/DNS.5/aDNS.99 = ${FQDN}' /var/snap/microk8s/current/certs/csr.conf.template > /home/ubuntu/csr.conf.template 
-            #- sudo cat /var/snap/microk8s/current/certs/csr.conf.template | sed '/DNS.5/aDNS.99 = {!Join [".", [!Ref ClusterName , !Ref HostedZoneName]]}' > /tmp/csr.conf.template 
-            # - sudo cp /home/ubuntu/csr.conf.template /var/snap/microk8s/current/certs/csr.conf.template 
 
             # Enable recommended add-ons
             - sudo microk8s refresh-certs --cert server.crt
-            # - sudo microk8s enable hostpath-storage
             - sudo microk8s kubectl apply -f /var/snap/microk8s/current/args/cni-network/cni.yaml
             - sudo microk8s kubectl create clusterrolebinding oidc-reviewer --clusterrole=system:service-account-issuer-discovery --group=system:unauthenticated
 
