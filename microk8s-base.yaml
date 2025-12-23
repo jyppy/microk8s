@@ -151,7 +151,6 @@ Resources:
                 version: 0.1.0
                 extraSANs:
                   - ${FQDN}
-                  - newssan.domain.com
                 extraKubeAPIServerArgs:
                   --secure-port: 8443
                   --service-account-issuer: 'https://${FQDN}'
