@@ -1,0 +1,241 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Ubuntu (latest LTS via SSM) + MicroK8s in a dedicated VPC (public subnet)
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: 172.21.0.0/16
+    Description: CIDR for the new VPC
+  PublicSubnetCidr:
+    Type: String
+    Default: 172.21.1.0/24
+    Description: CIDR for the public subnet
+  AllowedSSHCidr:
+    Type: String
+    Default: "66.159.208.0/22"
+    Description: CIDR allowed to SSH to the instance (use your IP/CIDR for security)
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: "jyp-aws-anz"
+    Description: Name of an existing EC2 KeyPair to enable SSH access
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3a.small
+      - t3a.medium
+      - t3a.large
+    Description: EC2 instance type for the MicroK8s node
+  MicroK8sChannel:
+    Type: String
+    Default: "1.33"
+    AllowedPattern: "^latest/stable$|^[0-9]+\\.[0-9]+$"
+    Description: Snap channel for MicroK8s (e.g., 'latest/stable' or '1.33', '1.35')
+  UbuntuAmiParameter:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"
+    Description: Canonical public SSM path for latest Ubuntu 24.04 LTS AMI (per-region)
+  HostedZoneName:
+    Type: String
+    Default: 'apac.venafidemo.com.'
+    Description: "(Optional) Hosted zone name WITH trailing dot (e.g., apac.venafidemo.com.). Leave empty if using HostedZoneId."
+  ClusterName:
+    Type: String
+    Default: "microk8s-1"
+    Description: cluster will be named <Name>.apac.venafidemo.com
+  FQDN:
+    Type: String
+    Default: "microk8s-16.apac.venafidemo.com"
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: MicroK8s-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MicroK8s-IGW
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: MicroK8s-PublicSubnet
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: MicroK8s-Public-RT
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTPS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedSSHCidr
+        - IpProtocol: tcp
+          FromPort: 8443
+          ToPort: 8443
+          CidrIp: !Ref AllowedSSHCidr
+      Tags:
+        - Key: Name
+          Value: MicroK8s-SG
+
+  MicroK8sInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref UbuntuAmiParameter
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: MicroK8s-Node
+      UserData:
+        Fn::Base64: !Sub |
+          #cloud-config
+          write_files:
+            - path: /var/snap/microk8s/common/.microk8s.yaml 
+              permissions: 0644
+              owner: root
+              content: |
+                # Default launch configuration for MicroK8s.
+                ---
+                version: 0.1.0
+                extraSANs:
+                  - ${FQDN}
+                  - newssan.domain.com
+                extraKubeAPIServerArgs:
+                  --secure-port: 8443
+                  --service-account-issuer: 'https://${FQDN}'
+                  --service-account-jwks-uri: 'https://${FQDN}:8443/openid/v1/jwks'
+                extraKubeletArgs:
+                  --cluster-domain: cluster.local
+                addons:
+                  - name: dns 
+                  - name: rbac
+                  - name: hostpath-storage
+          runcmd:
+            # Update packages
+            - sudo apt-get update -y
+
+            # Ensure snap is available (on Ubuntu it is by default)
+            - sudo apt-get install -y snapd
+
+            # Install custom microk8s params
+            - sudo mkdir -p /var/snap/microk8s/common/
+            
+            # Install MicroK8s with the requested channel
+            - sudo snap install microk8s --classic --channel=${MicroK8sChannel}
+            - sudo echo ${HostedZoneName} | sudo tee -a /home/ubuntu/fqdn.txt
+
+            # Add default Ubuntu user to microk8s group & prepare kube dir
+            - sudo usermod -a -G microk8s ubuntu
+            - sudo mkdir -p /home/ubuntu/.kube && sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
+
+            # Provide a kubectl alias for the ubuntu user
+            - echo "alias kubectl='microk8s kubectl'" | sudo tee -a /home/ubuntu/.bash_aliases
+            - sudo chown ubuntu:ubuntu /home/ubuntu/.bash_aliases
+
+            # Wait for MicroK8s to be ready
+            # - sudo microk8s status --wait-ready
+            - sudo cp /var/snap/microk8s/current/certs/csr.conf.template /home/ubuntu/csr.conf.template.org
+            # - sudo sed '/DNS.5/aDNS.99 = ${FQDN}' /var/snap/microk8s/current/certs/csr.conf.template > /home/ubuntu/csr.conf.template 
+            #- sudo cat /var/snap/microk8s/current/certs/csr.conf.template | sed '/DNS.5/aDNS.99 = {!Join [".", [!Ref ClusterName , !Ref HostedZoneName]]}' > /tmp/csr.conf.template 
+            # - sudo cp /home/ubuntu/csr.conf.template /var/snap/microk8s/current/certs/csr.conf.template 
+
+            # Enable recommended add-ons
+            - sudo microk8s refresh-certs --cert server.crt
+            # - sudo microk8s enable hostpath-storage
+            - sudo microk8s kubectl apply -f /var/snap/microk8s/current/args/cni-network/cni.yaml
+            - sudo microk8s kubectl create clusterrolebinding oidc-reviewer --clusterrole=system:service-account-issuer-discovery --group=system:unauthenticated
+
+  MicroK8sDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      # Choose either HostedZoneId or HostedZoneName at deploy time.
+      # CloudFormation requires ONLY ONE of these fields to be set.
+      # HostedZoneId: !If [UseHostedZoneId, !Ref HostedZoneId, !Ref 'AWS::NoValue' ]
+      #HostedZoneName: !If [UseHostedZoneName, !Ref HostedZoneName, !Ref 'AWS::NoValue' ]
+      HostedZoneName: !Ref HostedZoneName
+      #Name: !Ref RecordName
+      Name: !Join [".", [!Ref ClusterName , !Ref HostedZoneName]]
+      Type: A
+      TTL: '300'
+      ResourceRecords:
+        - !GetAtt MicroK8sInstance.PublicIp
+    DependsOn:
+      - MicroK8sInstance
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !Ref VPC
+  PublicSubnetId:
+    Description: Public Subnet ID
+    Value: !Ref PublicSubnet
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref MicroK8sInstance
+  PublicIp:
+    Description: Public IPv4 of the MicroK8s node
+    Value: !GetAtt MicroK8sInstance.PublicIp
+  SSHCommand:
+    Description: Example SSH command
+    Value: !Sub "ssh -i <path-to-your-key.pem> ubuntu@${MicroK8sDNSRecord}"
+  K8sReadyCheck:
+    Description: Command (after SSH) to verify MicroK8s is ready
+    Value: "microk8s status --wait-ready"
+  KubeAliasInfo:
+    Description: kubectl alias is set for 'ubuntu' user (kubectl -> microk8s kubectl)
+    Value: "source ~/.bash_aliases && kubectl get nodes"
+#  MicroK8sDNSRecord:
+#    Description: DNS record
+#    Value: !Ref MicroK8sDNSRecord
