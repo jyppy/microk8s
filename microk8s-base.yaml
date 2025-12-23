@@ -19,6 +19,10 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Default: "jyp-aws-anz"
     Description: Name of an existing EC2 KeyPair to enable SSH access
+  KubeAPIPort:
+    Type: String
+    Default: 8443
+    Description: TCP port used by microk8s API
   InstanceType:
     Type: String
     Default: t3.medium
@@ -32,7 +36,7 @@ Parameters:
     Description: EC2 instance type for the MicroK8s node
   MicroK8sChannel:
     Type: String
-    Default: "1.33"
+    Default: "1.35"
     AllowedPattern: "^latest/stable$|^[0-9]+\\.[0-9]+$"
     Description: Snap channel for MicroK8s (e.g., 'latest/stable' or '1.33', '1.35')
   UbuntuAmiParameter:
@@ -116,8 +120,8 @@ Resources:
           ToPort: 22
           CidrIp: !Ref AllowedSSHCidr
         - IpProtocol: tcp
-          FromPort: 8443
-          ToPort: 8443
+          FromPort: !Ref KubeAPIPort
+          ToPort: !Ref KubeAPIPort
           CidrIp: !Ref AllowedSSHCidr
       Tags:
         - Key: Name
@@ -152,9 +156,9 @@ Resources:
                 extraSANs:
                   - ${FQDN}
                 extraKubeAPIServerArgs:
-                  --secure-port: 8443
-                  --service-account-issuer: 'https://${FQDN}:8443'
-                  --service-account-jwks-uri: 'https://${FQDN}:8443/openid/v1/jwks'
+                  --secure-port: ${KubeAPIPort}
+                  --service-account-issuer: 'https://${FQDN}:${KubeAPIPort}'
+                  --service-account-jwks-uri: 'https://${FQDN}:${KubeAPIPort}/openid/v1/jwks'
                 extraKubeletArgs:
                   --cluster-domain: cluster.local
                 addons:
@@ -183,7 +187,7 @@ Resources:
             - sudo chown ubuntu:ubuntu /home/ubuntu/.bash_aliases
 
             # Wait for MicroK8s to be ready
-            # - sudo microk8s status --wait-ready
+            - sudo microk8s status --wait-ready -t 20
 
             # Enable recommended add-ons
             - sudo microk8s refresh-certs --cert server.crt
