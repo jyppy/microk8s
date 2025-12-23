@@ -173,7 +173,6 @@ Resources:
             
             # Install MicroK8s with the requested channel
             - sudo snap install microk8s --classic --channel=${MicroK8sChannel}
-            - sudo echo ${HostedZoneName} | sudo tee -a /home/ubuntu/fqdn.txt
 
             # Add default Ubuntu user to microk8s group & prepare kube dir
             - sudo usermod -a -G microk8s ubuntu
