@@ -187,7 +187,7 @@ Resources:
             - sudo chown ubuntu:ubuntu /home/ubuntu/.bash_aliases
 
             # Wait for MicroK8s to be ready
-            - sudo microk8s status --wait-ready -t 20
+            - sudo microk8s status --wait-ready -t 60
 
             # Enable recommended add-ons
             # - sudo microk8s refresh-certs --cert server.crt
