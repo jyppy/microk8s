@@ -10,3 +10,4 @@ aws cloudformation deploy \
 --region ap-southeast-2 \
 --parameter-overrides ClusterName=$NAME FQDN=$NAME.apac.venafidemo.com
 ```
+the AllowFromEverywhere tag must be set to "yes" - with quotes or CF will chsnge it to TRUE and the secGroup will not be properly tagged

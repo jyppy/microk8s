@@ -122,10 +122,12 @@ Resources:
         - IpProtocol: tcp
           FromPort: !Ref KubeAPIPort
           ToPort: !Ref KubeAPIPort
-          CidrIp: !Ref AllowedSSHCidr
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: MicroK8s-SG
+        - Key: AllowFromEverywhere
+          Value: "yes"
 
   MicroK8sInstance:
     Type: AWS::EC2::Instance
@@ -141,7 +143,9 @@ Resources:
             - !Ref InstanceSecurityGroup
       Tags:
         - Key: Name
-          Value: MicroK8s-Node
+          Value: !Join [ -, ["MicroK8s-Node", !Ref ClusterName]]
+        - Key: AllowFromEverywhere
+          Value: "yes"
       UserData:
         Fn::Base64: !Sub |
           #cloud-config
