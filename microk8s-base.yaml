@@ -198,6 +198,10 @@ Resources:
             - sudo microk8s kubectl apply -f /var/snap/microk8s/current/args/cni-network/cni.yaml
             - sudo microk8s kubectl create clusterrolebinding oidc-reviewer --clusterrole=system:service-account-issuer-discovery --group=system:unauthenticated
 
+            # Change Cluster FQDN:IP
+            - sudo microk8s kubectl config set-cluster microk8s-cluster --server=https://${FQDN}:${KubeAPIPort}
+            - sudo microk8s config > /home/ubuntu/kube.config
+
   MicroK8sDNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -237,6 +241,6 @@ Outputs:
   KubeAliasInfo:
     Description: kubectl alias is set for 'ubuntu' user (kubectl -> microk8s kubectl)
     Value: "source ~/.bash_aliases && kubectl get nodes"
-#  MicroK8sDNSRecord:
-#    Description: DNS record
-#    Value: !Ref MicroK8sDNSRecord
+  KubeConfig:
+    Description: kube.config file to be shared with cluster user
+    Value: "cat /home/ubuntu/kube.config"
