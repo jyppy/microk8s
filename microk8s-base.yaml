@@ -200,7 +200,15 @@ Resources:
 
             # Change Cluster FQDN:IP
             - sudo microk8s kubectl config set-cluster microk8s-cluster --server=https://${FQDN}:${KubeAPIPort}
-            - sudo microk8s config > /home/ubuntu/kube.config
+            #- sudo microk8s config > /home/ubuntu/kube.config
+
+            # Create a tempuser with full cluster access for 1 week
+            - sudo microk8s kubectl create serviceaccount temp-user
+            - sudo microk8s kubectl create clusterrolebinding temp-user-binding --clusterrole=cluster-admin --serviceaccount=default:temp-user
+            - sudo microk8s kubectl config set-credentials temp-user --token=`sudo microk8s kubectl create token temp-user --duration=48h`
+            - sudo microk8s kubectl config set-context temp-user-context --cluster=microk8s-cluster --user=temp-user
+            - sudo microk8s kubectl config use-context temp-user-context
+            - sudo microk8s kubectl config view --minify --raw > /home/ubuntu/temp-user.kubeconfig
 
   MicroK8sDNSRecord:
     Type: AWS::Route53::RecordSet
