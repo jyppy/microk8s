@@ -221,6 +221,14 @@ Resources:
             - path: /home/ubuntu/traffic.yaml 
               content: |
                 apiVersion: traefik.io/v1alpha1
+                kind: Middleware
+                metadata:
+                  name: nginx-auth
+                spec:
+                  basicAuth:
+                    secret: nginx-auth
+                ---
+                apiVersion: traefik.io/v1alpha1
                 kind: IngressRoute
                 metadata:
                   name: traefik-default
@@ -233,6 +241,8 @@ Resources:
                     services:
                     - name: nginx
                       port: 80
+                    middlewares:
+                      - name: nginx-auth
                   tls:
                     secretName:  mycert-tls
             - path: /home/ubuntu/nginx-svc.yaml
@@ -284,6 +294,7 @@ Resources:
             - sudo microk8s kubectl config use-context temp-user-context
             - sudo microk8s kubectl config view --minify --raw > /home/ubuntu/temp-user.kubeconfig
             - sudo microk8s kubectl config use-context microk8s
+            - sudo microk8s kubectl create secret generic nginx-auth --from-literal 'auth=user:$apr1$2nhUqvO7$wzeO.utyst8834nl1eITW0'
 
             # Create an nginx pod (needed for HTTP-01 challenge and enable cert-manager
             - sudo microk8s kubectl create deployment nginx --image=nginx
