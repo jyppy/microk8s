@@ -49,7 +49,8 @@ Parameters:
     Description: "(Optional) Hosted zone name WITH trailing dot (e.g., apac.venafidemo.com.). Leave empty if using HostedZoneId."
   ClusterName:
     Type: String
-    Default: "microk8s-1"
+    Default: "microk8s"
+    AllowedPattern: "[a-zA-Z][-a-zA-Z0-9]*|arn:[-a-zA-Z0-9:/._+]*"
     Description: cluster will be named <Name>.apac.venafidemo.com
   FQDN:
     Type: String
@@ -112,13 +113,21 @@ Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow SSH and HTTPS
+      GroupDescription: Allow SSH and HTTPS (also 80 for acme HTTP-01 and 443 access to pod)
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref AllowedSSHCidr
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: !Ref KubeAPIPort
           ToPort: !Ref KubeAPIPort
@@ -169,6 +178,74 @@ Resources:
                   - name: dns 
                   - name: rbac
                   - name: hostpath-storage
+                  - name: cert-manager
+                  - name: ingress
+            - path: /home/ubuntu/clusterissuers.yaml
+              content: |
+                # LE Cluster Issuer
+                apiVersion: cert-manager.io/v1
+                kind: ClusterIssuer
+                metadata:
+                  name: letsencrypt-staging
+                spec:
+                  acme:
+                    email: jy@blufrogs.com
+                    profile: tlsserver
+                    server: https://acme-staging-v02.api.letsencrypt.org/directory
+                    privateKeySecretRef:
+                      name: example-issuer-account-key
+                    solvers:
+                    - http01:
+                        ingress:
+                          ingressClassName: nginx
+            - path: /home/ubuntu/cert.yaml
+              content: |
+                # cert-example
+                apiVersion: cert-manager.io/v1
+                kind: Certificate
+                metadata:
+                  name: microk8s-external
+                spec:
+                  commonName: ${FQDN}
+                  dnsNames:
+                    - ${FQDN}
+                  issuerRef:
+                    kind: ClusterIssuer
+                    name: letsencrypt-staging
+                  secretName: mycert-tls
+                  privateKey:
+                    rotationPolicy: Always
+                  renewBefore: 60h # 15d
+                  usages:
+                    - server auth
+            - path: /home/ubuntu/traffic.yaml 
+              content: |
+                apiVersion: traefik.io/v1alpha1
+                kind: IngressRoute
+                metadata:
+                  name: traefik-default
+                spec:
+                  entryPoints:
+                  - websecure
+                  routes:
+                  - kind: Rule
+                    match: Host(`${FQDN}`)
+                    services:
+                    - name: nginx
+                      port: 80
+                  tls:
+                    secretName:  mycert-tls
+            - path: /home/ubuntu/nginx-svc.yaml
+              content: |
+                apiVersion: v1
+                kind: Service
+                metadata:
+                  name: nginx
+                spec:
+                  ports:
+                    - port: 80
+                  selector:
+                    app: nginx
           runcmd:
             # Update packages
             - sudo apt-get update -y
@@ -176,19 +253,16 @@ Resources:
             # Ensure snap is available (on Ubuntu it is by default)
             - sudo apt-get install -y snapd
 
-            # Install custom microk8s params
-            - sudo mkdir -p /var/snap/microk8s/common/
-            
             # Install MicroK8s with the requested channel
             - sudo snap install microk8s --classic --channel=${MicroK8sChannel}
 
             # Add default Ubuntu user to microk8s group & prepare kube dir
             - sudo usermod -a -G microk8s ubuntu
-            - sudo mkdir -p /home/ubuntu/.kube && sudo chown -R ubuntu:ubuntu /home/ubuntu/.kube
+            # - sudo mkdir -p /home/ubuntu/.kube
 
             # Provide a kubectl alias for the ubuntu user
             - echo "alias kubectl='microk8s kubectl'" | sudo tee -a /home/ubuntu/.bash_aliases
-            - sudo chown ubuntu:ubuntu /home/ubuntu/.bash_aliases
+            - sudo chown -R ubuntu:ubuntu /home/ubuntu/
 
             # Wait for MicroK8s to be ready
             - sudo microk8s status --wait-ready -t 60
@@ -209,6 +283,17 @@ Resources:
             - sudo microk8s kubectl config set-context temp-user-context --cluster=microk8s-cluster --user=temp-user
             - sudo microk8s kubectl config use-context temp-user-context
             - sudo microk8s kubectl config view --minify --raw > /home/ubuntu/temp-user.kubeconfig
+            - sudo microk8s kubectl config use-context microk8s
+
+            # Create an nginx pod (needed for HTTP-01 challenge and enable cert-manager
+            - sudo microk8s kubectl create deployment nginx --image=nginx
+
+            # Create Cluster issuer and certificate resource to secure NGINX traffic 
+            - sleep 120
+            - sudo microk8s kubectl apply -f /home/ubuntu/clusterissuers.yaml
+            - sudo microk8s kubectl apply -f /home/ubuntu/cert.yaml
+            - sudo microk8s kubectl apply -f /home/ubuntu/traffic.yaml
+            - sudo microk8s kubectl apply -f /home/ubuntu/nginx-svc.yaml
 
   MicroK8sDNSRecord:
     Type: AWS::Route53::RecordSet
@@ -252,3 +337,4 @@ Outputs:
   KubeConfig:
     Description: kube.config file to be shared with cluster user
     Value: "cat /home/ubuntu/kube.config"
+
