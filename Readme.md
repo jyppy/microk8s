@@ -28,3 +28,16 @@ The AllowFromEverywhere tag must be set to **"yes"** - with quotes or CF will ch
 aws cloudformation delete-stack --stack-name $NAME --region ap-southeast-2
 ```
 
+# Retrieve the kubeconfig file (Valid for 2 days)
+
+Now that the single node kubernetes node is up and running, the config file will be available for download from a download page provided by the NGINX pod. You will need to authenticate (Basic Auth), to retrieve the config file
+
+[Your assigned Microk8s node](https://FQDN/temp-user.txt)
+
+using this kubeconfig file, you shoud now have access full access to the resources available in that k8s node.
+
+```
+kubectl --kubeconfig k8.yaml  get all -A
+```
+
+
