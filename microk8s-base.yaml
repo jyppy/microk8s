@@ -218,6 +218,34 @@ Resources:
                   renewBefore: 60h # 15d
                   usages:
                     - server auth
+            - path: /home/ubuntu/nginx-deployment.yaml
+              content: |
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: nginx
+                spec:
+                  selector:
+                    matchLabels:
+                      app: nginx
+                  replicas: 1
+                  template:
+                    metadata:
+                      labels:
+                        app: nginx
+                    spec:
+                      containers:
+                      - name: nginx
+                        image: nginx:latest
+                        ports:
+                        - containerPort: 80
+                        volumeMounts:
+                        - name: config-volume
+                          mountPath: /usr/share/nginx/html
+                      volumes:
+                      - name: config-volume
+                        configMap:
+                          name: nginx-index # Reference the ConfigMap name
             - path: /home/ubuntu/traffic.yaml 
               content: |
                 apiVersion: traefik.io/v1alpha1
@@ -292,12 +320,14 @@ Resources:
             - sudo microk8s kubectl config set-credentials temp-user --token=`sudo microk8s kubectl create token temp-user --duration=48h`
             - sudo microk8s kubectl config set-context temp-user-context --cluster=microk8s-cluster --user=temp-user
             - sudo microk8s kubectl config use-context temp-user-context
-            - sudo microk8s kubectl config view --minify --raw > /home/ubuntu/temp-user.kubeconfig
+            - sudo microk8s kubectl config view --minify --raw > /home/ubuntu/temp-user.txt
             - sudo microk8s kubectl config use-context microk8s
             - sudo microk8s kubectl create secret generic nginx-auth --from-literal 'auth=user:$apr1$2nhUqvO7$wzeO.utyst8834nl1eITW0'
 
             # Create an nginx pod (needed for HTTP-01 challenge and enable cert-manager
-            - sudo microk8s kubectl create deployment nginx --image=nginx
+            # - sudo microk8s kubectl create deployment nginx --image=nginx
+            - sudo microk8s kubectl apply -f /home/ubuntu/nginx-deployment.yaml
+            - sudo microk8s kubectl create configmap nginx-index --from-file=/home/ubuntu/temp-user.txt
 
             # Create Cluster issuer and certificate resource to secure NGINX traffic 
             - sleep 120
