@@ -25,7 +25,7 @@ Parameters:
     Description: TCP port used by microk8s API
   InstanceType:
     Type: String
-    Default: t3.medium
+    Default: t3a.medium
     AllowedValues:
       - t3.small
       - t3.medium
@@ -191,7 +191,7 @@ Resources:
                   acme:
                     email: jy@blufrogs.com
                     profile: tlsserver
-                    server: https://acme-staging-v02.api.letsencrypt.org/directory
+                    server: https://acme-v02.api.letsencrypt.org/directory
                     privateKeySecretRef:
                       name: example-issuer-account-key
                     solvers:
