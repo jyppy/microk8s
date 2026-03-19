@@ -1,0 +1,9 @@
+{
+  "Name": "NAME",
+  "IssuerUri": "https://NAME.mimlab.io:8443",
+  "PurposeField": "aud",
+  "PurposeMatch":"tpp",
+  "IdField": "sub",
+  "IdMatch": "system:serviceaccount:cyberark:venafi-connection",
+  "GranteePrefixedUniversal": "bob"
+}
