@@ -115,7 +115,7 @@ Also, now is a good time to check the OIDC endpoint of our single node microk8s 
 curl -sk https://$NAME.mimlab.io:8443/openid/v1/jwks | jq
 ```
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image.png)
+![image.png](images/image.png)
 
 ## D/ Create k8s resources
 
@@ -197,7 +197,7 @@ curl -s $VCERT_URL/vedauth/Authorize/Jwt \
 -H 'Content-Type: application/json' | jq
 ```
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image%201.png)
+![image.png](images/image%201.png)
 
 ## F/ Deploy workload identity issuer
 
@@ -241,7 +241,7 @@ helm upgrade firefly oci://registry.venafi.cloud/public/venafi-images/helm/firef
     --version v1.10.2
 ```
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image%202.png)
+![image.png](images/image%202.png)
 
 You can also check the state of the ‘venaficonnection’ created ealier. note that if sucessful, the status should show ‘Token Generated’
 
@@ -249,9 +249,9 @@ You can also check the state of the ‘venaficonnection’ created ealier. note 
 kubectl describe -n cyberark venaficonnections.jetstack.io
 ```
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image%203.png)
+![image.png](images/image%203.png)
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image%204.png)
+![image.png](images/image%204.png)
 
 ## G/ Check certificate issuance
 
@@ -284,4 +284,4 @@ Sample cert resource to be created in sandbox namespace for a certificate issued
  kubectl apply -f sample-firefly-certificate-20m.yaml
 ```
 
-![image.png](Firefly,%20TPP%20and%20public%20Repos/image%205.png)
+![image.png](images/image%205.png)
