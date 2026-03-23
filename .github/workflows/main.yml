@@ -1,1 +1,9 @@
+name: No Build
 
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: OK
+        run: echo "Hello"
