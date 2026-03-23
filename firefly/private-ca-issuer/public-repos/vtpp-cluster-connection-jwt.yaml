@@ -1,0 +1,16 @@
+apiVersion: jetstack.io/v1alpha1
+kind: VenafiConnection
+metadata:
+  name: vtpp-connection-jwt
+  namespace: cyberark
+spec:
+  tpp:
+    url: https://jyptest-tpp.se.venafi.com
+    accessToken:
+    - serviceAccountToken:
+        audiences: ["tpp"]
+        name: venafi-connection
+    - tppOAuth:
+        authInputType: JWT
+        clientId: firefly
+        url: https://jyptest-tpp.se.venafi.com

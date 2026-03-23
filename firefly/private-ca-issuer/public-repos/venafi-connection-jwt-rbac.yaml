@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: cyberark
+  name: venafi-token-creator
+rules:
+- apiGroups: [""]
+  resources: ["serviceaccounts/token"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: venafi-token-binding
+  namespace: cyberark
+subjects:
+- kind: ServiceAccount
+  name: venafi-connection
+  namespace: cyberark
+roleRef:
+  kind: Role
+  name: venafi-token-creator
+  apiGroup: rbac.authorization.k8s.io

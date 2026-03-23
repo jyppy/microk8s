@@ -1,0 +1,21 @@
+  apiVersion: cert-manager.io/v1
+  kind: Certificate
+  metadata:
+    name: cert-20mins-1.svc.cluster.local
+    namespace: sandbox
+    annotations:
+      firefly.venafi.com/policy-name: firefly-two-day-RSA-certs
+  spec:
+    isCA: false
+    commonName: cert-20mins-1.svc.cluster.local
+    dnsNames:
+    - cert-20mins-1.svc.cluster.local
+    privateKey:
+      algorithm: RSA
+      rotationPolicy: Always
+    renewBefore: 2860m # renew every 20 mins (2days ~ 2880-20m)
+    secretName: cert-20mins-1.svc.cluster.local
+    issuerRef:
+      name: firefly
+      group: firefly.venafi.com
+

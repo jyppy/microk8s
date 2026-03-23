@@ -1,0 +1,293 @@
+subCaProvider:
+  validityPeriod: P10D
+  commonName: firefly-provider-with-standalone-ca
+  keyAlgorithm: RSA_4096
+  tppPolicyFolderDN: "Firefly\\SubCA"
+clientAuthentication:
+  urls:
+  - https://example.com/.well-known/jwks.json
+  type: JWT_JWKS
+clientAuthorization:
+  customClaimsAliases:
+    configuration: venafi-firefly.configuration
+    allowAllPolicies: venafi-firefly.allowAllPolicies
+    allowedPolicies: venafi-firefly.allowedPolicies
+policyDefinitions:
+- name: firefly-two-day-RSA-certs
+  validityPeriod: P2D
+  subject:
+    commonName:
+      type: REQUIRED
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      minOccurrences: 1
+      maxOccurrences: 10
+    organization:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Venafi Inc
+      maxOccurrences: 1
+    organizationalUnit:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Firefly Unit
+      maxOccurrences: 1
+    locality:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Sydney
+      maxOccurrences: 1
+    stateOrProvince:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - NSW
+      maxOccurrences: 1
+    country:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - AU
+      maxOccurrences: 1
+  sans:
+    dnsNames:
+      type: OPTIONAL
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      maxOccurrences: 10
+  keyUsages:
+  - digitalSignature
+  - keyEncipherment
+  extendedKeyUsages:
+  - CLIENT_AUTH
+  - SERVER_AUTH
+  keyAlgorithm:
+    allowedValues:
+    - RSA_2048
+    - RSA_3072
+    - RSA_4096
+    - EC_P256
+    - EC_P384
+    - EC_P521
+    - EC_ED25519
+    defaultValue: EC_P256
+- name: firefly-ten-day-RSA-certs
+  validityPeriod: P10D
+  subject:
+    commonName:
+      type: REQUIRED
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      minOccurrences: 1
+      maxOccurrences: 10
+    organization:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Venafi Inc
+      maxOccurrences: 1
+    organizationalUnit:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Firefly Unit
+      maxOccurrences: 1
+    locality:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Sydney
+      maxOccurrences: 1
+    stateOrProvince:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - NSW
+      maxOccurrences: 1
+    country:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - AU
+      maxOccurrences: 1
+  sans:
+    dnsNames:
+      type: OPTIONAL
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      maxOccurrences: 10
+  keyUsages:
+  - digitalSignature
+  - keyEncipherment
+  extendedKeyUsages:
+  - CLIENT_AUTH
+  - SERVER_AUTH
+  keyAlgorithm:
+    allowedValues:
+    - RSA_2048
+    - RSA_3072
+    - RSA_4096
+    - EC_P256
+    - EC_P384
+    - EC_P521
+    - EC_ED25519
+    defaultValue: EC_P256
+- name: firefly-hundred-day-RSA-certs
+  validityPeriod: P100D
+  subject:
+    commonName:
+      type: REQUIRED
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      minOccurrences: 1
+      maxOccurrences: 10
+    organization:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Venafi Inc
+      maxOccurrences: 1
+    organizationalUnit:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Firefly Unit
+      maxOccurrences: 1
+    locality:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Sydney
+      maxOccurrences: 1
+    stateOrProvince:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - NSW
+      maxOccurrences: 1
+    country:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - AU
+      maxOccurrences: 1
+  sans:
+    dnsNames:
+      type: OPTIONAL
+      allowedValues:
+      - "^.*\\.svc\\.cluster\\.local"
+      maxOccurrences: 10
+  keyUsages:
+  - digitalSignature
+  - keyEncipherment
+  extendedKeyUsages:
+  - CLIENT_AUTH
+  - SERVER_AUTH
+  keyAlgorithm:
+    allowedValues:
+    - RSA_2048
+    - RSA_3072
+    - RSA_4096
+    - EC_P256
+    - EC_P384
+    - EC_P521
+    - EC_ED25519
+    defaultValue: EC_P256
+- name: firefly-istio-service-mesh-policy
+  validityPeriod: PT1H
+  subject:
+    commonName:
+      type: OPTIONAL
+      allowedValues:
+      - istiod.istio-system.svc
+      - ^.*
+      maxOccurrences: 10
+    organization:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Venafi Inc
+      maxOccurrences: 1
+    organizationalUnit:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Firefly Unit
+      maxOccurrences: 1
+    locality:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - Sydney
+      maxOccurrences: 1
+    stateOrProvince:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - NSW
+      maxOccurrences: 1
+    country:
+      type: OPTIONAL
+      allowedValues:
+      - ^.*$
+      defaultValues:
+      - AU
+      maxOccurrences: 1
+  sans:
+    dnsNames:
+      type: OPTIONAL
+      allowedValues:
+      - istio-csr.cyberark.svc
+      - cert-manager-istio-csr.cyberark.svc
+      - istiod.istio-system.svc
+      maxOccurrences: 10
+    uniformResourceIdentifiers:
+      type: OPTIONAL
+      allowedValues:
+      - ^spiffe://cluster.local/ns/.*/sa/.*
+      maxOccurrences: 10
+  keyUsages:
+  - digitalSignature
+  - keyEncipherment
+  extendedKeyUsages:
+  - CLIENT_AUTH
+  - SERVER_AUTH
+  keyAlgorithm:
+    allowedValues:
+    - RSA_2048
+    - RSA_3072
+    - RSA_4096
+    - EC_P256
+    - EC_P384
+    - EC_P521
+    - EC_ED25519
+    defaultValue: EC_P256
+allowedPolicies:
+- firefly-hundred-day-RSA-certs
+- firefly-istio-service-mesh-policy
+- firefly-ten-day-RSA-certs
+- firefly-two-day-RSA-certs
+minTlsVersion: TLS13
+
