@@ -200,6 +200,22 @@ curl -s $VCERT_URL/vedauth/Authorize/Jwt \
 
 ## F/ Deploy workload identity issuer
 
+Before deploying the Helm Chart, we need to ensure that the Firefly Policy file is available on TPP and in the correct location. in this example, the ConfigurationDN for Firefly configuration is stored in Firefly\tpp-public-config
+
+This can be checked using the ```venctl pull``` command
+
+```bash
+venctl configuration firefly pull \
+--api-url $VCERT_URL \
+--name "Firefly\tpp-public-config" \
+--username $USER \
+--password $PASSWD
+```
+
+This command will return the FF policy stored in TPP
+
+![image.png](images/FF-policy.png)
+
 Values file used by helm chart:
 
 ```yaml
