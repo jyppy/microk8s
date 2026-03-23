@@ -14,6 +14,7 @@ aws cloudformation deploy \
 --region ap-southeast-2 \
 --stack-name $NAME \
 --parameter-overrides \
+KeyName=my-key \
 ClusterName=$NAME \
 HostedZoneName=mydomain.test. \
 FQDN=$NAME.mydomain.test
