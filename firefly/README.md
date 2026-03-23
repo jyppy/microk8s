@@ -89,7 +89,7 @@ Send to TPP to check that a valid OAUTH token is returned:
 
 ```jsx
 curl -sX POST $VCERT_URL/vedsdk/oauth/createjwtmapping \
-     -H "Authorization: Bearer wML6AIYYrjDpGbA063effw==" \
+     -H "Authorization: Bearer "$BEARER \
      -H "Content-Type:application/json" \
      -d @../microk8s/create-tpp-jwt-mapping.json | jq
 ```
