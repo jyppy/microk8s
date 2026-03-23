@@ -1,0 +1,24 @@
+acceptTerms: true
+deployment:
+  extraVolumes:
+  - name: ca-bundle-cert
+    secret:
+      secretName: ca-bundle-cert
+  extraVolumeMounts:
+  - mountPath: /etc/ssl/certs/
+    name: ca-bundle-cert
+
+  config:
+    bootstrap:
+      tpp:
+        enabled: true
+        configurationDN: Firefly\tpp-public-config
+        connection:
+          name: "vtpp-connection-jwt"
+        csr:
+          instanceNaming: "SUBCA-CERTIFICATE"
+    controller:
+      certManager:
+        checkApproval: false
+
+  replicaCount: 1

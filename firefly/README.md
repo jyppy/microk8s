@@ -134,8 +134,9 @@ JCqVJUzKoZHm1Lesh3Sz8W2jmdv51b2EQJ8HmA==
 
 ```
 
+all config files are in the ```demo/microk8s/firefly``` directory
+
 ```bash
-cd ~/demo/firefly-tpp
 
 #Namespaces
 kubectl apply -f namespaces/cyberark.yaml
@@ -252,7 +253,7 @@ helm upgrade firefly oci://registry.venafi.cloud/public/venafi-images/helm/firef
     --install \
     --wait \
     --namespace cyberark \
-    --values ./values-files/FF-short02.yaml \
+    --values ./values-files/FF-short.yaml \
     --version v1.10.2
 ```
 
