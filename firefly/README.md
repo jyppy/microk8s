@@ -99,12 +99,11 @@ curl -sX POST $VCERT_URL/vedsdk/oauth/createjwtmapping \
 SSH to new K8s node and pull config
 
 ```bash
-cd ~/demo/firefly-tpp
 ssh -i ~/.ssh/jyp-aws-anz.pem ubuntu@$NAME.mimlab.io \
-'microk8s kubectl config view --raw' > $NAME.kubeconfig
+'microk8s kubectl config view --raw' > /tmp/$NAME.kubeconfig
 
-chmod 600 $NAME.kubeconfig
-export KUBECONFIG=$NAME.kubeconfig
+chmod 600 /tmp/$NAME.kubeconfig
+export KUBECONFIG=/tmp/$NAME.kubeconfig
 
 kubectl get pods 
 ```
