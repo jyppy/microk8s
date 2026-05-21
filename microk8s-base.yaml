@@ -144,6 +144,10 @@ Resources:
       ImageId: !Ref UbuntuAmiParameter
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 40
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: 0
